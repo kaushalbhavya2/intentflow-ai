@@ -87,12 +87,11 @@
   .tab { padding: 8px 16px; font-size: 12px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; letter-spacing: 0.05em; text-transform: uppercase; }
   .tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
   .tab:hover:not(.active) { color: var(--text2); }
-
   .tab-pane { display: none; padding: 18px 22px; }
   .tab-pane.active { display: block; }
 
   textarea {
-    width: 100%; height: 230px; resize: vertical;
+    width: 100%; height: 260px; resize: vertical;
     background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r);
     color: var(--text); font-family: var(--font-mono); font-size: 13px; line-height: 1.75;
     padding: 14px 16px; outline: none; transition: border 0.15s;
@@ -101,7 +100,7 @@
   textarea::placeholder { color: var(--text3); }
 
   .file-drop {
-    height: 230px; border: 1.5px dashed var(--border2); border-radius: var(--r);
+    height: 260px; border: 1.5px dashed var(--border2); border-radius: var(--r);
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
     cursor: pointer; transition: all 0.15s; color: var(--text3);
   }
@@ -126,19 +125,6 @@
   }
   .option-chip.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent2); }
   .option-chip:hover:not(.active) { border-color: var(--border2); color: var(--text2); }
-
-  .api-key-section { padding: 0 22px 18px; }
-  .api-label { font-size: 11px; color: var(--text3); font-family: var(--font-mono); margin-bottom: 6px; letter-spacing: 0.06em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
-  .api-input-wrap { position: relative; }
-  .api-input {
-    width: 100%; padding: 10px 42px 10px 14px; background: var(--bg3); border: 1px solid var(--border);
-    border-radius: var(--r); color: var(--text); font-family: var(--font-mono); font-size: 12px; outline: none; transition: border 0.15s;
-  }
-  .api-input:focus { border-color: var(--border2); }
-  .api-input::placeholder { color: var(--text3); }
-  .eye-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text3); cursor: pointer; padding: 2px; font-size: 14px; }
-  .api-note { font-size: 11px; color: var(--text3); font-family: var(--font-mono); margin-top: 6px; line-height: 1.6; }
-  .api-note a { color: var(--accent2); text-decoration: underline; text-underline-offset: 2px; }
 
   .error-box {
     background: rgba(228,75,75,0.08); border: 1px solid rgba(228,75,75,0.2);
@@ -186,9 +172,7 @@
   .funnel-bars { display: flex; flex-direction: column; gap: 10px; }
   .funnel-row { display: flex; align-items: center; gap: 12px; }
   .funnel-label { font-size: 11px; font-family: var(--font-mono); width: 44px; font-weight: 600; }
-  .label-tofu { color: var(--tofu); }
-  .label-mofu { color: var(--mofu); }
-  .label-bofu { color: var(--bofu); }
+  .label-tofu { color: var(--tofu); } .label-mofu { color: var(--mofu); } .label-bofu { color: var(--bofu); }
   .funnel-bar-wrap { flex: 1; height: 26px; background: var(--bg3); border-radius: 5px; overflow: hidden; }
   .funnel-bar { height: 100%; border-radius: 5px; display: flex; align-items: center; padding-left: 12px; font-size: 11px; font-weight: 600; font-family: var(--font-mono); transition: width 0.9s cubic-bezier(0.34,1.56,0.64,1); }
   .bar-tofu { background: rgba(45,212,191,0.22); color: var(--tofu); }
@@ -248,7 +232,7 @@
     <div class="status-bar">
       <div class="status-dot"></div>
       <span>gemini-2.0-flash · ready</span>
-      <span class="free-badge">✦ free tier</span>
+      <span class="free-badge">✦ no sign-up needed</span>
     </div>
   </header>
 
@@ -293,21 +277,6 @@
           <div class="option-chip active" id="chip-BOFU" onclick="toggleChip(this,'BOFU')">BOFU</div>
         </div>
 
-        <div class="api-key-section">
-          <div class="api-label">
-            Google AI Studio Key
-            <span class="free-badge">free</span>
-          </div>
-          <div class="api-input-wrap">
-            <input class="api-input" id="api-key" type="password" placeholder="AIzaSy..." autocomplete="off">
-            <button class="eye-btn" onclick="toggleKey()" title="Show / hide key">👁</button>
-          </div>
-          <div class="api-note">
-            Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>
-            &nbsp;·&nbsp; Key never leaves your browser.
-          </div>
-        </div>
-
         <div class="error-box" id="error-box"></div>
 
         <button class="run-btn" id="run-btn" onclick="runAnalysis()">
@@ -321,7 +290,7 @@
       <div class="empty-state">
         <div class="empty-icon">🗺</div>
         <div class="empty-title">No clusters yet</div>
-        <div class="empty-sub">Paste keywords, add your free Google AI Studio key, and click Analyse to map search intent across your funnel.</div>
+        <div class="empty-sub">Paste your keywords or upload a CSV, then click Analyse to map search intent across your funnel.</div>
       </div>
     </div>
   </div>
@@ -396,11 +365,6 @@ enterprise marketing automation`;
     }
   }
 
-  function toggleKey() {
-    const i = document.getElementById('api-key');
-    i.type = i.type === 'password' ? 'text' : 'password';
-  }
-
   function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('dragging'); }
   function handleDragLeave() { document.getElementById('drop-zone').classList.remove('dragging'); }
   function handleDrop(e) { e.preventDefault(); document.getElementById('drop-zone').classList.remove('dragging'); if (e.dataTransfer.files[0]) parseCSV(e.dataTransfer.files[0]); }
@@ -433,10 +397,6 @@ enterprise marketing automation`;
   }
 
   async function runAnalysis() {
-    const apiKey = document.getElementById('api-key').value.trim();
-    if (!apiKey) { showError('Please enter your Google AI Studio API key (starts with AIzaSy...).'); return; }
-    if (!apiKey.startsWith('AIza')) { showError("That doesn't look like a Google AI Studio key — it should start with AIzaSy..."); return; }
-
     const keywords = getKeywords();
     if (keywords.length < 2) { showError('Add at least 2 keywords to cluster.'); return; }
     if (keywords.length > 250) { showError('Max 250 keywords per run. Split into batches for best results.'); return; }
@@ -456,7 +416,7 @@ ${keywords.map((k,i) => `${i+1}. ${k}`).join('\n')}
 
 Only include clusters for these funnel stages: ${stagesFilter}
 
-Respond ONLY with valid JSON. No markdown, no explanation, no backticks. Start your response with { and end with }.
+Respond ONLY with valid JSON. No markdown, no explanation, no backticks. Start with { and end with }.
 
 Return this exact structure:
 {
@@ -468,7 +428,7 @@ Return this exact structure:
       "content_angle": "Specific content angle in 1-2 sentences",
       "cta": "Specific call-to-action recommendation",
       "channels": ["channel1", "channel2"],
-      "strategy": "Full strategic recommendation in 2-3 sentences covering why this cluster matters, what the audience needs, and exactly what content to create"
+      "strategy": "Full strategic recommendation in 2-3 sentences"
     }
   ],
   "summary": {
@@ -480,18 +440,16 @@ Return this exact structure:
 }
 
 Rules:
-- TOFU = awareness, informational, "what is", "how to", broad educational queries
+- TOFU = awareness, informational, "what is", "how to", broad educational
 - MOFU = consideration, comparison, "best", "vs", feature evaluation
-- BOFU = decision, transactional, pricing, demo, buy, trial, vendor-specific
-- intent field must be exactly "TOFU", "MOFU", or "BOFU"
-- Each cluster should have 2-8 keywords
-- Channels should be specific: Blog, SEO, LinkedIn, Email Nurture, Google Ads, Retargeting, YouTube, Paid Social, etc.
+- BOFU = decision, transactional, pricing, demo, buy, trial
+- intent must be exactly "TOFU", "MOFU", or "BOFU"
+- Each cluster: 2-8 keywords
+- Channels: Blog, SEO, LinkedIn, Email Nurture, Google Ads, Retargeting, YouTube, Paid Social, etc.
 - summary counts = total keywords in clusters of that stage`;
 
     try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-      const res = await fetch(endpoint, {
+      const res = await fetch('/.netlify/functions/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -506,7 +464,7 @@ Rules:
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message || 'API error ' + res.status);
+        throw new Error(err?.error?.message || 'Server error ' + res.status + '. Please try again.');
       }
 
       const data = await res.json();
@@ -514,7 +472,7 @@ Rules:
 
       if (!rawText) {
         const reason = data?.candidates?.[0]?.finishReason || 'unknown';
-        throw new Error('No response from Gemini (finish reason: ' + reason + '). Please try again.');
+        throw new Error('No response from Gemini (reason: ' + reason + '). Please try again.');
       }
 
       let parsed;
@@ -524,11 +482,11 @@ Rules:
       } catch(e) {
         const match = rawText.match(/\{[\s\S]*\}/);
         if (match) parsed = JSON.parse(match[0]);
-        else throw new Error('Could not parse response as JSON. Please try again.');
+        else throw new Error('Could not parse response. Please try again.');
       }
 
       if (!parsed.clusters || !Array.isArray(parsed.clusters)) {
-        throw new Error('Unexpected response structure from Gemini. Please try again.');
+        throw new Error('Unexpected response from AI. Please try again.');
       }
 
       lastResults = parsed;
@@ -536,9 +494,8 @@ Rules:
 
     } catch(err) {
       let msg = err.message;
-      if (msg.includes('API_KEY_INVALID') || msg.includes('400')) msg = 'Invalid API key. Double-check your key at aistudio.google.com/apikey.';
-      else if (msg.includes('429') || msg.includes('QUOTA')) msg = 'Rate limit reached. Wait a moment and try again — free tier limits reset quickly.';
-      else if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) msg = 'Network error. Check your internet connection and try again.';
+      if (msg.includes('429') || msg.includes('QUOTA')) msg = 'Rate limit reached — please wait a moment and try again.';
+      else if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) msg = 'Network error. Check your connection and try again.';
 
       panel.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Something went wrong</div><div class="empty-sub" style="color:#f08080;max-width:360px;">${msg}</div></div>`;
     }
@@ -553,13 +510,12 @@ Rules:
     const tofu = clusters.filter(c => c.intent === 'TOFU').length;
     const mofu = clusters.filter(c => c.intent === 'MOFU').length;
     const bofu = clusters.filter(c => c.intent === 'BOFU').length;
-    const total = clusters.length;
     const maxC = Math.max(tofu, mofu, bofu, 1);
     const totalKw = clusters.reduce((a,c) => a + (c.keywords||[]).length, 0);
 
     let html = `
       <div class="results-header">
-        <span class="results-title">${total} cluster${total!==1?'s':''} &middot; ${summary?.total_keywords || totalKw} keywords mapped</span>
+        <span class="results-title">${clusters.length} cluster${clusters.length!==1?'s':''} &middot; ${summary?.total_keywords||totalKw} keywords mapped</span>
         <div class="results-actions">
           <button class="action-btn" onclick="copyResults()">⎘ Copy JSON</button>
           <button class="action-btn primary" onclick="exportCSV()">↓ Export CSV</button>
