@@ -19,11 +19,11 @@ exports.handler = async function (event) {
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://intentflow.netlify.app",
+        "HTTP-Referer": "https://instaflowai.netlify.app",
         "X-Title": "IntentFlow by Bhavya Kaushal",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp:free",
+        model: "meta-llama/llama-4-maverick:free",
         messages: [
           {
             role: "system",
