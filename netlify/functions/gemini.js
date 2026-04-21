@@ -3,7 +3,7 @@ exports.handler = async function (event) {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return {
       statusCode: 500,
@@ -12,13 +12,31 @@ exports.handler = async function (event) {
   }
 
   try {
-    const body = JSON.parse(event.body);
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const { prompt } = JSON.parse(event.body);
 
-    const response = await fetch(endpoint, {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": "https://intentflow.netlify.app",
+        "X-Title": "IntentFlow by Bhavya Kaushal",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.0-flash-exp:free",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert SEO strategist and content marketing specialist. You always respond with valid JSON only — no markdown, no backticks, no explanation. Your response must start with { and end with }."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 8192,
+      }),
     });
 
     const data = await response.json();
@@ -27,15 +45,18 @@ exports.handler = async function (event) {
       return {
         statusCode: response.status,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ error: data?.error?.message || "OpenRouter error " + response.status }),
       };
     }
+
+    const text = data?.choices?.[0]?.message?.content || "";
 
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ text }),
     };
+
   } catch (err) {
     return {
       statusCode: 500,
