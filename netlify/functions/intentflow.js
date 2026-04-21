@@ -23,7 +23,7 @@ exports.handler = async function (event) {
         "X-Title": "IntentFlow by Bhavya Kaushal",
       },
       body: JSON.stringify({
-        model: "meta-llama/llama-4-maverick:free",
+        model: "openrouter/free",
         messages: [
           {
             role: "system",
