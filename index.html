@@ -117,7 +117,7 @@
   }
   .file-icon { color: var(--success); }
 
-  .options-row { display: flex; gap: 12px; padding: 0 22px 18px; }
+  .options-row { display: flex; gap: 12px; padding: 0 22px 22px; }
   .option-chip {
     flex: 1; padding: 10px 12px; background: var(--bg3); border: 1px solid var(--border);
     border-radius: var(--r); text-align: center; cursor: pointer; transition: all 0.15s;
@@ -174,7 +174,7 @@
   .funnel-label { font-size: 11px; font-family: var(--font-mono); width: 44px; font-weight: 600; }
   .label-tofu { color: var(--tofu); } .label-mofu { color: var(--mofu); } .label-bofu { color: var(--bofu); }
   .funnel-bar-wrap { flex: 1; height: 26px; background: var(--bg3); border-radius: 5px; overflow: hidden; }
-  .funnel-bar { height: 100%; border-radius: 5px; display: flex; align-items: center; padding-left: 12px; font-size: 11px; font-weight: 600; font-family: var(--font-mono); transition: width 0.9s cubic-bezier(0.34,1.56,0.64,1); }
+  .funnel-bar { height: 100%; border-radius: 5px; display: flex; align-items: center; padding-left: 12px; font-size: 11px; font-weight: 600; font-family: var(--font-mono); transition: width 0.9s cubic-bezier(0.34,1.56,0.64,1); min-width: 0; }
   .bar-tofu { background: rgba(45,212,191,0.22); color: var(--tofu); }
   .bar-mofu { background: rgba(245,158,11,0.18); color: var(--mofu); }
   .bar-bofu { background: rgba(244,114,182,0.18); color: var(--bofu); }
@@ -405,20 +405,18 @@ enterprise marketing automation`;
     btn.disabled = true; btn.textContent = '⚡ Analysing…';
 
     const panel = document.getElementById('results-panel');
-    panel.innerHTML = `<div class="loading-card"><div class="spinner"></div><div class="loading-text">Clustering ${keywords.length} keywords…</div><div class="loading-sub">Gemini is mapping intent and grouping themes</div></div>`;
+    panel.innerHTML = `<div class="loading-card"><div class="spinner"></div><div class="loading-text">Clustering ${keywords.length} keywords…</div><div class="loading-sub">AI is mapping intent and grouping themes</div></div>`;
 
     const stagesFilter = Array.from(activeStages).join(', ');
 
-    const prompt = `You are an expert SEO strategist and content marketing specialist. Analyse the following keyword list and group them into thematic clusters.
+    const prompt = `Analyse the following keyword list and group them into thematic clusters.
 
 Keywords to analyse:
 ${keywords.map((k,i) => `${i+1}. ${k}`).join('\n')}
 
 Only include clusters for these funnel stages: ${stagesFilter}
 
-Respond ONLY with valid JSON. No markdown, no explanation, no backticks. Start with { and end with }.
-
-Return this exact structure:
+Return this exact JSON structure with no extra text:
 {
   "clusters": [
     {
@@ -428,7 +426,7 @@ Return this exact structure:
       "content_angle": "Specific content angle in 1-2 sentences",
       "cta": "Specific call-to-action recommendation",
       "channels": ["channel1", "channel2"],
-      "strategy": "Full strategic recommendation in 2-3 sentences"
+      "strategy": "Full strategic recommendation in 2-3 sentences covering why this cluster matters, what the audience needs, and exactly what content to create"
     }
   ],
   "summary": {
@@ -449,44 +447,33 @@ Rules:
 - summary counts = total keywords in clusters of that stage`;
 
     try {
-      const res = await fetch('/.netlify/functions/gemini', {
+      const res = await fetch('/.netlify/functions/intentflow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 8192,
-            responseMimeType: 'application/json'
-          }
-        })
+        body: JSON.stringify({ prompt })
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message || 'Server error ' + res.status + '. Please try again.');
-      }
-
       const data = await res.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-      if (!rawText) {
-        const reason = data?.candidates?.[0]?.finishReason || 'unknown';
-        throw new Error('No response from Gemini (reason: ' + reason + '). Please try again.');
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Server error ' + res.status);
       }
+
+      const rawText = data.text || '';
+      if (!rawText) throw new Error('Empty response from AI. Please try again.');
 
       let parsed;
       try {
-        const cleaned = rawText.replace(/^```json\s*/i,'').replace(/```\s*$/i,'').trim();
+        const cleaned = rawText.replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
         parsed = JSON.parse(cleaned);
       } catch(e) {
         const match = rawText.match(/\{[\s\S]*\}/);
         if (match) parsed = JSON.parse(match[0]);
-        else throw new Error('Could not parse response. Please try again.');
+        else throw new Error('Could not parse AI response as JSON. Please try again.');
       }
 
       if (!parsed.clusters || !Array.isArray(parsed.clusters)) {
-        throw new Error('Unexpected response from AI. Please try again.');
+        throw new Error('Unexpected response structure. Please try again.');
       }
 
       lastResults = parsed;
@@ -494,8 +481,9 @@ Rules:
 
     } catch(err) {
       let msg = err.message;
-      if (msg.includes('429') || msg.includes('QUOTA')) msg = 'Rate limit reached — please wait a moment and try again.';
+      if (msg.includes('429') || msg.includes('rate') || msg.includes('quota')) msg = 'Rate limit reached — please wait a moment and try again.';
       else if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) msg = 'Network error. Check your connection and try again.';
+      else if (msg.includes('401') || msg.includes('auth')) msg = 'Authentication error — check that the API key is correctly saved in Netlify environment variables.';
 
       panel.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Something went wrong</div><div class="empty-sub" style="color:#f08080;max-width:360px;">${msg}</div></div>`;
     }
