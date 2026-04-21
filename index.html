@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IntentFlow by Bhavya Kaushal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #181820;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0f0f8;
+    --text2: #9090aa;
+    --text3: #5a5a72;
+    --accent: #7c6cfa;
+    --accent2: #a89fff;
+    --accent-glow: rgba(124,108,250,0.15);
+    --tofu: #2dd4bf;
+    --tofu-bg: rgba(45,212,191,0.1);
+    --mofu: #f59e0b;
+    --mofu-bg: rgba(245,158,11,0.1);
+    --bofu: #f472b6;
+    --bofu-bg: rgba(244,114,182,0.1);
+    --success: #4ade80;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --font-serif: 'Instrument Serif', serif;
+    --r: 10px;
+    --r2: 16px;
+  }
+
+  body { font-family: var(--font-display); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+  .noise {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity: 0.4;
+  }
+
+  .grid-lines {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: linear-gradient(rgba(124,108,250,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,108,250,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1140px; margin: 0 auto; padding: 0 28px 100px; }
+
+  header { padding: 52px 0 40px; display: flex; flex-direction: column; gap: 8px; }
+  .logo-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .logo {
+    font-size: 30px; font-weight: 800; letter-spacing: -1.5px;
+    background: linear-gradient(135deg, #a89fff 0%, #7c6cfa 40%, #f472b6 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .logo-by { font-size: 13px; color: var(--text3); }
+  .logo-name { color: var(--text2); font-weight: 600; font-size: 13px; }
+  .tagline { font-family: var(--font-serif); font-style: italic; font-size: 16px; color: var(--text3); }
+
+  .status-bar {
+    display: flex; align-items: center; gap: 7px; padding: 6px 14px; border-radius: 100px;
+    background: var(--bg3); border: 1px solid var(--border); width: fit-content; margin-top: 6px;
+    font-size: 12px; color: var(--text3); font-family: var(--font-mono);
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse 2.5s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  .free-badge {
+    display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 100px;
+    background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.25);
+    font-size: 10px; font-family: var(--font-mono); color: var(--success);
+  }
+
+  .main-grid { display: grid; grid-template-columns: 390px 1fr; gap: 22px; align-items: start; }
+
+  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); overflow: hidden; }
+  .panel-header { padding: 16px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); font-family: var(--font-mono); }
+  .input-meta { font-size: 11px; color: var(--text3); font-family: var(--font-mono); }
+
+  .input-tabs { display: flex; padding: 12px 22px 0; border-bottom: 1px solid var(--border); }
+  .tab { padding: 8px 16px; font-size: 12px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; letter-spacing: 0.05em; text-transform: uppercase; }
+  .tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text2); }
+
+  .tab-pane { display: none; padding: 18px 22px; }
+  .tab-pane.active { display: block; }
+
+  textarea {
+    width: 100%; height: 230px; resize: vertical;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r);
+    color: var(--text); font-family: var(--font-mono); font-size: 13px; line-height: 1.75;
+    padding: 14px 16px; outline: none; transition: border 0.15s;
+  }
+  textarea:focus { border-color: var(--border2); }
+  textarea::placeholder { color: var(--text3); }
+
+  .file-drop {
+    height: 230px; border: 1.5px dashed var(--border2); border-radius: var(--r);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    cursor: pointer; transition: all 0.15s; color: var(--text3);
+  }
+  .file-drop:hover, .file-drop.dragging { border-color: var(--accent); background: var(--accent-glow); }
+  .drop-icon { font-size: 30px; opacity: 0.5; }
+  .drop-text { font-size: 13px; font-family: var(--font-mono); }
+  .drop-sub { font-size: 11px; color: var(--text3); }
+  input[type="file"] { display: none; }
+
+  .file-loaded {
+    display: none; align-items: center; gap: 10px;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r);
+    padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; color: var(--text2); margin-top: 10px;
+  }
+  .file-icon { color: var(--success); }
+
+  .options-row { display: flex; gap: 12px; padding: 0 22px 18px; }
+  .option-chip {
+    flex: 1; padding: 10px 12px; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--r); text-align: center; cursor: pointer; transition: all 0.15s;
+    font-size: 12px; font-weight: 600; color: var(--text3); letter-spacing: 0.05em;
+  }
+  .option-chip.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent2); }
+  .option-chip:hover:not(.active) { border-color: var(--border2); color: var(--text2); }
+
+  .api-key-section { padding: 0 22px 18px; }
+  .api-label { font-size: 11px; color: var(--text3); font-family: var(--font-mono); margin-bottom: 6px; letter-spacing: 0.06em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .api-input-wrap { position: relative; }
+  .api-input {
+    width: 100%; padding: 10px 42px 10px 14px; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--r); color: var(--text); font-family: var(--font-mono); font-size: 12px; outline: none; transition: border 0.15s;
+  }
+  .api-input:focus { border-color: var(--border2); }
+  .api-input::placeholder { color: var(--text3); }
+  .eye-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text3); cursor: pointer; padding: 2px; font-size: 14px; }
+  .api-note { font-size: 11px; color: var(--text3); font-family: var(--font-mono); margin-top: 6px; line-height: 1.6; }
+  .api-note a { color: var(--accent2); text-decoration: underline; text-underline-offset: 2px; }
+
+  .error-box {
+    background: rgba(228,75,75,0.08); border: 1px solid rgba(228,75,75,0.2);
+    border-radius: var(--r); padding: 12px 16px; font-family: var(--font-mono); font-size: 12px;
+    color: #f08080; line-height: 1.6; display: none; margin: 0 22px 14px;
+  }
+  .error-box.visible { display: block; }
+
+  .run-btn {
+    margin: 0 22px 22px; width: calc(100% - 44px); padding: 14px; border-radius: var(--r);
+    background: linear-gradient(135deg, #7c6cfa, #a89fff); border: none; color: #fff;
+    font-family: var(--font-display); font-size: 14px; font-weight: 700; letter-spacing: 0.05em;
+    cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .run-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 32px rgba(124,108,250,0.3); }
+  .run-btn:active:not(:disabled) { transform: translateY(0); }
+  .run-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-shimmer { position: absolute; inset: 0; background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%); transform: translateX(-100%); }
+  .run-btn:not(:disabled):hover .btn-shimmer { animation: shimmer 0.6s ease; }
+  @keyframes shimmer { to { transform: translateX(100%); } }
+
+  .sample-link { font-size: 12px; color: var(--accent2); cursor: pointer; font-family: var(--font-mono); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(168,159,255,0.3); }
+  .sample-link:hover { text-decoration-color: var(--accent2); }
+
+  .results-panel { display: flex; flex-direction: column; gap: 18px; }
+
+  .empty-state {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); padding: 70px 40px;
+    display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
+  }
+  .empty-icon { width: 58px; height: 58px; border-radius: 14px; background: var(--bg3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 26px; }
+  .empty-title { font-size: 17px; font-weight: 700; color: var(--text); }
+  .empty-sub { font-size: 13px; color: var(--text3); max-width: 300px; line-height: 1.65; font-family: var(--font-mono); }
+
+  .results-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .results-title { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--font-mono); }
+  .results-actions { display: flex; gap: 8px; }
+  .action-btn { padding: 7px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: 7px; color: var(--text2); font-family: var(--font-display); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+  .action-btn:hover { border-color: var(--border2); color: var(--text); }
+  .action-btn.primary { background: var(--accent-glow); border-color: var(--accent); color: var(--accent2); }
+  .action-btn.primary:hover { background: rgba(124,108,250,0.22); }
+
+  .funnel-vis { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); padding: 22px; }
+  .funnel-title { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--font-mono); margin-bottom: 18px; }
+  .funnel-bars { display: flex; flex-direction: column; gap: 10px; }
+  .funnel-row { display: flex; align-items: center; gap: 12px; }
+  .funnel-label { font-size: 11px; font-family: var(--font-mono); width: 44px; font-weight: 600; }
+  .label-tofu { color: var(--tofu); }
+  .label-mofu { color: var(--mofu); }
+  .label-bofu { color: var(--bofu); }
+  .funnel-bar-wrap { flex: 1; height: 26px; background: var(--bg3); border-radius: 5px; overflow: hidden; }
+  .funnel-bar { height: 100%; border-radius: 5px; display: flex; align-items: center; padding-left: 12px; font-size: 11px; font-weight: 600; font-family: var(--font-mono); transition: width 0.9s cubic-bezier(0.34,1.56,0.64,1); }
+  .bar-tofu { background: rgba(45,212,191,0.22); color: var(--tofu); }
+  .bar-mofu { background: rgba(245,158,11,0.18); color: var(--mofu); }
+  .bar-bofu { background: rgba(244,114,182,0.18); color: var(--bofu); }
+  .funnel-count { font-size: 11px; font-family: var(--font-mono); color: var(--text3); width: 65px; text-align: right; }
+
+  .cluster-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); overflow: hidden; animation: slideIn 0.3s ease both; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .cluster-top { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .cluster-name-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .cluster-name { font-size: 16px; font-weight: 700; color: var(--text); }
+  .intent-badge { padding: 3px 11px; border-radius: 100px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--font-mono); }
+  .badge-tofu { background: var(--tofu-bg); color: var(--tofu); border: 1px solid rgba(45,212,191,0.25); }
+  .badge-mofu { background: var(--mofu-bg); color: var(--mofu); border: 1px solid rgba(245,158,11,0.25); }
+  .badge-bofu { background: var(--bofu-bg); color: var(--bofu); border: 1px solid rgba(244,114,182,0.25); }
+  .cluster-count { font-size: 11px; color: var(--text3); font-family: var(--font-mono); white-space: nowrap; }
+  .cluster-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; }
+  .cluster-keywords { display: flex; flex-wrap: wrap; gap: 6px; }
+  .kw-pill { padding: 4px 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; color: var(--text2); font-family: var(--font-mono); }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .info-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 13px 15px; }
+  .info-card-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); font-family: var(--font-mono); margin-bottom: 6px; }
+  .info-card-value { font-size: 13px; color: var(--text); line-height: 1.55; }
+  .channel-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+  .channel-pill { padding: 2px 9px; border-radius: 4px; font-size: 11px; background: var(--accent-glow); color: var(--accent2); font-family: var(--font-mono); border: 1px solid rgba(124,108,250,0.2); }
+  .strategy-box { background: linear-gradient(135deg, rgba(124,108,250,0.06), rgba(244,114,182,0.04)); border: 1px solid rgba(124,108,250,0.15); border-radius: var(--r); padding: 14px 16px; grid-column: 1 / -1; }
+  .strategy-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent2); font-family: var(--font-mono); margin-bottom: 6px; }
+  .strategy-text { font-size: 13px; color: var(--text); line-height: 1.65; }
+
+  .loading-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); padding: 70px 40px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .spinner { width: 38px; height: 38px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--text2); font-family: var(--font-mono); }
+  .loading-sub { font-size: 12px; color: var(--text3); font-family: var(--font-mono); }
+
+  .toast { position: fixed; bottom: 28px; right: 28px; z-index: 1000; background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: var(--text); font-family: var(--font-mono); display: flex; align-items: center; gap: 8px; transform: translateY(80px); opacity: 0; transition: all 0.28s cubic-bezier(0.34,1.56,0.64,1); box-shadow: 0 16px 40px rgba(0,0,0,0.5); pointer-events: none; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  @media (max-width: 860px) { .main-grid { grid-template-columns: 1fr; } .info-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 480px) { .wrap { padding: 0 16px 60px; } header { padding: 32px 0 24px; } .logo { font-size: 24px; } }
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+<div class="grid-lines"></div>
+
+<div class="wrap">
+  <header>
+    <div class="logo-row">
+      <span class="logo">IntentFlow</span>
+      <span class="logo-by">by</span>
+      <span class="logo-name">Bhavya Kaushal</span>
+    </div>
+    <p class="tagline">Turn raw keywords into structured content strategy — powered by AI</p>
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <span>gemini-2.0-flash · ready</span>
+      <span class="free-badge">✦ free tier</span>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Input</span>
+          <span class="input-meta" id="kw-count">0 keywords</span>
+        </div>
+
+        <div class="input-tabs">
+          <div class="tab active" id="tab-paste" onclick="switchTab('paste')">Paste</div>
+          <div class="tab" id="tab-csv" onclick="switchTab('csv')">CSV Upload</div>
+        </div>
+
+        <div class="tab-pane active" id="pane-paste">
+          <textarea id="kw-input" placeholder="crm software for small business&#10;best email marketing tools&#10;how to improve open rates&#10;hubspot vs salesforce&#10;marketing automation pricing&#10;..." oninput="updateCount()"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+            <span class="sample-link" onclick="loadSample()">Load sample keywords</span>
+            <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);">one per line</span>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="pane-csv">
+          <div class="file-drop" id="drop-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+            <div class="drop-icon">📂</div>
+            <div class="drop-text">Drop CSV file here</div>
+            <div class="drop-sub">or click to browse · first column used</div>
+          </div>
+          <input type="file" id="file-input" accept=".csv" onchange="handleFile(event)">
+          <div class="file-loaded" id="file-loaded">
+            <span class="file-icon">✓</span>
+            <span id="file-name">file.csv</span>
+            <span style="color:var(--text3)" id="file-kw-count"></span>
+          </div>
+        </div>
+
+        <div class="options-row">
+          <div class="option-chip active" id="chip-TOFU" onclick="toggleChip(this,'TOFU')">TOFU</div>
+          <div class="option-chip active" id="chip-MOFU" onclick="toggleChip(this,'MOFU')">MOFU</div>
+          <div class="option-chip active" id="chip-BOFU" onclick="toggleChip(this,'BOFU')">BOFU</div>
+        </div>
+
+        <div class="api-key-section">
+          <div class="api-label">
+            Google AI Studio Key
+            <span class="free-badge">free</span>
+          </div>
+          <div class="api-input-wrap">
+            <input class="api-input" id="api-key" type="password" placeholder="AIzaSy..." autocomplete="off">
+            <button class="eye-btn" onclick="toggleKey()" title="Show / hide key">👁</button>
+          </div>
+          <div class="api-note">
+            Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>
+            &nbsp;·&nbsp; Key never leaves your browser.
+          </div>
+        </div>
+
+        <div class="error-box" id="error-box"></div>
+
+        <button class="run-btn" id="run-btn" onclick="runAnalysis()">
+          <div class="btn-shimmer"></div>
+          ⚡ Analyse Keywords
+        </button>
+      </div>
+    </div>
+
+    <div class="results-panel" id="results-panel">
+      <div class="empty-state">
+        <div class="empty-icon">🗺</div>
+        <div class="empty-title">No clusters yet</div>
+        <div class="empty-sub">Paste keywords, add your free Google AI Studio key, and click Analyse to map search intent across your funnel.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let csvKeywords = [];
+  let activeStages = new Set(['TOFU','MOFU','BOFU']);
+  let lastResults = null;
+
+  const SAMPLE = `crm software for small business
+best email marketing tools
+how to improve email open rates
+hubspot vs salesforce comparison
+marketing automation pricing
+what is lead nurturing
+free crm for startups
+email segmentation strategies
+b2b lead generation tactics
+hubspot onboarding guide
+email automation workflow examples
+crm implementation checklist
+inbound marketing definition
+how to build a contact list
+marketing qualified lead vs sales qualified lead
+email drip campaign best practices
+customer journey mapping template
+seo keyword research tools
+content marketing for saas
+conversion rate optimisation tips
+sales funnel stages explained
+request a demo crm software
+buy marketing automation software
+hubspot pricing plans 2024
+best crm for real estate agents
+compare email marketing platforms
+schedule a consultation marketing agency
+get a free trial crm
+download email marketing guide
+enterprise marketing automation`;
+
+  function loadSample() {
+    document.getElementById('kw-input').value = SAMPLE;
+    updateCount();
+  }
+
+  function updateCount() {
+    const n = getKeywords().length;
+    document.getElementById('kw-count').textContent = n + ' keyword' + (n !== 1 ? 's' : '');
+  }
+
+  function getKeywords() {
+    if (document.querySelector('.tab-pane.active').id === 'pane-csv') return csvKeywords;
+    return document.getElementById('kw-input').value.split('\n').map(k => k.trim()).filter(k => k.length > 1);
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab, .tab-pane').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('pane-' + tab).classList.add('active');
+    updateCount();
+  }
+
+  function toggleChip(el, stage) {
+    if (activeStages.has(stage)) {
+      if (activeStages.size <= 1) return;
+      activeStages.delete(stage); el.classList.remove('active');
+    } else {
+      activeStages.add(stage); el.classList.add('active');
+    }
+  }
+
+  function toggleKey() {
+    const i = document.getElementById('api-key');
+    i.type = i.type === 'password' ? 'text' : 'password';
+  }
+
+  function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('dragging'); }
+  function handleDragLeave() { document.getElementById('drop-zone').classList.remove('dragging'); }
+  function handleDrop(e) { e.preventDefault(); document.getElementById('drop-zone').classList.remove('dragging'); if (e.dataTransfer.files[0]) parseCSV(e.dataTransfer.files[0]); }
+  function handleFile(e) { if (e.target.files[0]) parseCSV(e.target.files[0]); }
+
+  function parseCSV(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      csvKeywords = e.target.result.split('\n').map(l => l.split(',')[0].replace(/"/g,'').trim()).filter(k => k.length > 1);
+      if (csvKeywords[0] && csvKeywords[0].toLowerCase().includes('keyword')) csvKeywords.shift();
+      document.getElementById('file-loaded').style.display = 'flex';
+      document.getElementById('file-name').textContent = file.name;
+      document.getElementById('file-kw-count').textContent = csvKeywords.length + ' keywords loaded';
+      document.getElementById('drop-zone').style.display = 'none';
+      updateCount();
+    };
+    reader.readAsText(file);
+  }
+
+  function showError(msg) {
+    const b = document.getElementById('error-box');
+    b.textContent = msg; b.classList.add('visible');
+    setTimeout(() => b.classList.remove('visible'), 7000);
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = '✓ ' + msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  async function runAnalysis() {
+    const apiKey = document.getElementById('api-key').value.trim();
+    if (!apiKey) { showError('Please enter your Google AI Studio API key (starts with AIzaSy...).'); return; }
+    if (!apiKey.startsWith('AIza')) { showError("That doesn't look like a Google AI Studio key — it should start with AIzaSy..."); return; }
+
+    const keywords = getKeywords();
+    if (keywords.length < 2) { showError('Add at least 2 keywords to cluster.'); return; }
+    if (keywords.length > 250) { showError('Max 250 keywords per run. Split into batches for best results.'); return; }
+
+    const btn = document.getElementById('run-btn');
+    btn.disabled = true; btn.textContent = '⚡ Analysing…';
+
+    const panel = document.getElementById('results-panel');
+    panel.innerHTML = `<div class="loading-card"><div class="spinner"></div><div class="loading-text">Clustering ${keywords.length} keywords…</div><div class="loading-sub">Gemini is mapping intent and grouping themes</div></div>`;
+
+    const stagesFilter = Array.from(activeStages).join(', ');
+
+    const prompt = `You are an expert SEO strategist and content marketing specialist. Analyse the following keyword list and group them into thematic clusters.
+
+Keywords to analyse:
+${keywords.map((k,i) => `${i+1}. ${k}`).join('\n')}
+
+Only include clusters for these funnel stages: ${stagesFilter}
+
+Respond ONLY with valid JSON. No markdown, no explanation, no backticks. Start your response with { and end with }.
+
+Return this exact structure:
+{
+  "clusters": [
+    {
+      "name": "Short descriptive cluster name (3-5 words)",
+      "intent": "TOFU",
+      "keywords": ["keyword1", "keyword2"],
+      "content_angle": "Specific content angle in 1-2 sentences",
+      "cta": "Specific call-to-action recommendation",
+      "channels": ["channel1", "channel2"],
+      "strategy": "Full strategic recommendation in 2-3 sentences covering why this cluster matters, what the audience needs, and exactly what content to create"
+    }
+  ],
+  "summary": {
+    "total_keywords": ${keywords.length},
+    "tofu_count": 0,
+    "mofu_count": 0,
+    "bofu_count": 0
+  }
+}
+
+Rules:
+- TOFU = awareness, informational, "what is", "how to", broad educational queries
+- MOFU = consideration, comparison, "best", "vs", feature evaluation
+- BOFU = decision, transactional, pricing, demo, buy, trial, vendor-specific
+- intent field must be exactly "TOFU", "MOFU", or "BOFU"
+- Each cluster should have 2-8 keywords
+- Channels should be specific: Blog, SEO, LinkedIn, Email Nurture, Google Ads, Retargeting, YouTube, Paid Social, etc.
+- summary counts = total keywords in clusters of that stage`;
+
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 8192,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || 'API error ' + res.status);
+      }
+
+      const data = await res.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+      if (!rawText) {
+        const reason = data?.candidates?.[0]?.finishReason || 'unknown';
+        throw new Error('No response from Gemini (finish reason: ' + reason + '). Please try again.');
+      }
+
+      let parsed;
+      try {
+        const cleaned = rawText.replace(/^```json\s*/i,'').replace(/```\s*$/i,'').trim();
+        parsed = JSON.parse(cleaned);
+      } catch(e) {
+        const match = rawText.match(/\{[\s\S]*\}/);
+        if (match) parsed = JSON.parse(match[0]);
+        else throw new Error('Could not parse response as JSON. Please try again.');
+      }
+
+      if (!parsed.clusters || !Array.isArray(parsed.clusters)) {
+        throw new Error('Unexpected response structure from Gemini. Please try again.');
+      }
+
+      lastResults = parsed;
+      renderResults(parsed);
+
+    } catch(err) {
+      let msg = err.message;
+      if (msg.includes('API_KEY_INVALID') || msg.includes('400')) msg = 'Invalid API key. Double-check your key at aistudio.google.com/apikey.';
+      else if (msg.includes('429') || msg.includes('QUOTA')) msg = 'Rate limit reached. Wait a moment and try again — free tier limits reset quickly.';
+      else if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) msg = 'Network error. Check your internet connection and try again.';
+
+      panel.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Something went wrong</div><div class="empty-sub" style="color:#f08080;max-width:360px;">${msg}</div></div>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = '⚡ Analyse Keywords';
+  }
+
+  function renderResults(data) {
+    const { clusters, summary } = data;
+    const panel = document.getElementById('results-panel');
+    const tofu = clusters.filter(c => c.intent === 'TOFU').length;
+    const mofu = clusters.filter(c => c.intent === 'MOFU').length;
+    const bofu = clusters.filter(c => c.intent === 'BOFU').length;
+    const total = clusters.length;
+    const maxC = Math.max(tofu, mofu, bofu, 1);
+    const totalKw = clusters.reduce((a,c) => a + (c.keywords||[]).length, 0);
+
+    let html = `
+      <div class="results-header">
+        <span class="results-title">${total} cluster${total!==1?'s':''} &middot; ${summary?.total_keywords || totalKw} keywords mapped</span>
+        <div class="results-actions">
+          <button class="action-btn" onclick="copyResults()">⎘ Copy JSON</button>
+          <button class="action-btn primary" onclick="exportCSV()">↓ Export CSV</button>
+        </div>
+      </div>
+      <div class="funnel-vis">
+        <div class="funnel-title">Intent Distribution</div>
+        <div class="funnel-bars">
+          <div class="funnel-row">
+            <span class="funnel-label label-tofu">TOFU</span>
+            <div class="funnel-bar-wrap"><div class="funnel-bar bar-tofu" style="width:${Math.round(tofu/maxC*100)}%">${tofu>0?tofu+' cluster'+(tofu!==1?'s':''):''}</div></div>
+            <span class="funnel-count">${summary?.tofu_count||0} kw</span>
+          </div>
+          <div class="funnel-row">
+            <span class="funnel-label label-mofu">MOFU</span>
+            <div class="funnel-bar-wrap"><div class="funnel-bar bar-mofu" style="width:${Math.round(mofu/maxC*100)}%">${mofu>0?mofu+' cluster'+(mofu!==1?'s':''):''}</div></div>
+            <span class="funnel-count">${summary?.mofu_count||0} kw</span>
+          </div>
+          <div class="funnel-row">
+            <span class="funnel-label label-bofu">BOFU</span>
+            <div class="funnel-bar-wrap"><div class="funnel-bar bar-bofu" style="width:${Math.round(bofu/maxC*100)}%">${bofu>0?bofu+' cluster'+(bofu!==1?'s':''):''}</div></div>
+            <span class="funnel-count">${summary?.bofu_count||0} kw</span>
+          </div>
+        </div>
+      </div>`;
+
+    clusters.forEach((c, i) => {
+      const badge = 'badge-' + (c.intent||'tofu').toLowerCase();
+      const kws = (c.keywords||[]).map(k => `<span class="kw-pill">${k}</span>`).join('');
+      const chs = (c.channels||[]).map(ch => `<span class="channel-pill">${ch}</span>`).join('');
+      html += `
+        <div class="cluster-card" style="animation-delay:${i*0.06}s">
+          <div class="cluster-top">
+            <div class="cluster-name-row">
+              <span class="cluster-name">${c.name}</span>
+              <span class="intent-badge ${badge}">${c.intent}</span>
+            </div>
+            <span class="cluster-count">${(c.keywords||[]).length} keyword${(c.keywords||[]).length!==1?'s':''}</span>
+          </div>
+          <div class="cluster-body">
+            <div class="cluster-keywords">${kws}</div>
+            <div class="info-grid">
+              <div class="info-card"><div class="info-card-label">Content Angle</div><div class="info-card-value">${c.content_angle||'—'}</div></div>
+              <div class="info-card"><div class="info-card-label">Suggested CTA</div><div class="info-card-value">${c.cta||'—'}</div></div>
+              <div class="info-card"><div class="info-card-label">Recommended Channels</div><div class="channel-pills">${chs||'<span style="font-size:12px;color:var(--text3)">—</span>'}</div></div>
+              <div class="strategy-box"><div class="strategy-label">Strategic Recommendation</div><div class="strategy-text">${c.strategy||'—'}</div></div>
+            </div>
+          </div>
+        </div>`;
+    });
+
+    panel.innerHTML = html;
+  }
+
+  function exportCSV() {
+    if (!lastResults) return;
+    const rows = [['Cluster Name','Intent Stage','Keywords','Content Angle','Suggested CTA','Channels','Strategic Recommendation']];
+    lastResults.clusters.forEach(c => {
+      rows.push([c.name, c.intent, (c.keywords||[]).join(' | '), c.content_angle, c.cta, (c.channels||[]).join(' | '), c.strategy]);
+    });
+    const csv = rows.map(r => r.map(cell => `"${String(cell||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.download = 'intentflow-clusters.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('CSV exported');
+  }
+
+  function copyResults() {
+    if (!lastResults) return;
+    navigator.clipboard.writeText(JSON.stringify(lastResults, null, 2)).then(() => showToast('JSON copied to clipboard'));
+  }
+
+  updateCount();
+</script>
+</body>
+</html>
